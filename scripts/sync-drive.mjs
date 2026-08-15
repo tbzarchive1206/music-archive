@@ -35,6 +35,16 @@ function keyOf(value = "") {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, "");
 }
 
+function normalizeDate(value = "") {
+  const text = String(value).trim();
+  if (!text) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/u.test(text)) return text;
+  const us = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/u);
+  if (us) return `${us[3]}-${us[1].padStart(2, "0")}-${us[2].padStart(2, "0")}`;
+  const parsed = new Date(text);
+  return Number.isNaN(parsed.getTime()) ? "" : `${parsed.getUTCFullYear()}-${String(parsed.getUTCMonth() + 1).padStart(2, "0")}-${String(parsed.getUTCDate()).padStart(2, "0")}`;
+}
+
 async function readMetadata() {
   if (!metadataSheetId || metadataSheetId.startsWith("__")) return {};
   const range = encodeURIComponent("Releases!A1:M1000");
@@ -46,6 +56,7 @@ async function readMetadata() {
     const headers = (rows.shift() || []).map(keyOf);
     return Object.fromEntries(rows.map((values) => {
       const row = Object.fromEntries(headers.map((header, index) => [header, values[index] || ""]));
+      row.release_date = normalizeDate(row.release_date);
       return [row.folder_id, row];
     }).filter(([folderId]) => folderId));
   } catch (error) {

@@ -28,8 +28,6 @@ jobs:
           GOOGLE_SHEETS_API_KEY: ${{ secrets.GOOGLE_SHEETS_API_KEY }}
           MUSIC_METADATA_SHEET_ID: ${{ vars.MUSIC_METADATA_SHEET_ID }}
       - run: pnpm test
-        env:
-          VITE_GOOGLE_DRIVE_API_KEY: ${{ secrets.GOOGLE_DRIVE_PLAYER_API_KEY }}
       - name: Commit changed archive index
         run: |
           if git diff --quiet -- app/data/archive.generated.json; then exit 0; fi

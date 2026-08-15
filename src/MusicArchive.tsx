@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 type RawNode = {
   id: string;
@@ -27,16 +27,23 @@ type SoundcloudMember = { id: string; name: string; tracks: Track[] };
 
 const ALBUMS = "[ALBUMS AND DIGITAL SINGLES]";
 const SOUNDCLOUD = "[THE BOYZ SOUNDCLOUD]";
-const driveApiKey = import.meta.env.VITE_GOOGLE_DRIVE_API_KEY?.trim() || "";
 const normalize = (value = "") => value.normalize("NFKD").toLocaleLowerCase().replace(/[^\p{L}\p{N}]+/gu, " ").trim();
 const cleanTrack = (value: string) => value.replace(/\.(flac|mp3|m4a|wav|ogg)$/iu, "").replace(/^\s*\d{1,3}[\s._-]+/u, "").replace(/\s+-\s+THE BOYZ(?:\s*\([^)]*\))?$/iu, "").trim();
+const normalizeDate = (value = "") => {
+  const text = String(value).trim();
+  if (!text) return "";
+  if (/^\d{4}-\d{2}-\d{2}$/u.test(text)) return text;
+  const us = text.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/u);
+  if (us) return `${us[3]}-${us[1].padStart(2, "0")}-${us[2].padStart(2, "0")}`;
+  const parsed = new Date(text);
+  return Number.isNaN(parsed.getTime()) ? "" : `${parsed.getFullYear()}-${String(parsed.getMonth() + 1).padStart(2, "0")}-${String(parsed.getDate()).padStart(2, "0")}`;
+};
 const formatDate = (value: string) => value ? new Date(`${value}T00:00:00`).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }).toUpperCase() : "DATE TO ADD";
 const folderUrl = (id: string) => `https://drive.google.com/drive/folders/${encodeURIComponent(id)}`;
 const fileUrl = (id: string) => `https://drive.google.com/file/d/${encodeURIComponent(id)}/view`;
 const downloadUrl = (id: string) => `https://drive.google.com/uc?export=download&id=${encodeURIComponent(id)}`;
-const streamUrl = (id: string) => driveApiKey
-  ? `https://www.googleapis.com/drive/v3/files/${encodeURIComponent(id)}?alt=media&key=${encodeURIComponent(driveApiKey)}`
-  : `https://drive.usercontent.google.com/download?id=${encodeURIComponent(id)}&export=download&confirm=t`;
+const previewUrl = (id: string) => `https://drive.google.com/file/d/${encodeURIComponent(id)}/preview`;
+const driveImageId = (value = "") => value.match(/\/d\/([^/?#]+)/u)?.[1] || value.match(/[?&]id=([^&#]+)/u)?.[1] || "";
 
 function inferType(title: string) {
   if (/\bOST\b|soundtrack|argylle/iu.test(title)) return "OST & SOUNDTRACK";
@@ -84,7 +91,7 @@ function buildArchive(data: RawArchive) {
       tracks,
       coverId,
       coverUrl,
-      date: metadata.release_date || "",
+      date: normalizeDate(metadata.release_date),
       type: metadata.release_type || inferType(title),
       members: (metadata.members || "THE BOYZ").split(/[,;/]/u).map((item) => item.trim()).filter(Boolean),
       market: metadata.market || "",
@@ -114,10 +121,14 @@ function buildArchive(data: RawArchive) {
 }
 
 function Cover({ release, compact = false }: { release: Pick<Release, "title" | "coverId" | "coverUrl">; compact?: boolean }) {
-  const [failed, setFailed] = useState(false);
-  const source = release.coverUrl || (release.coverId ? `https://drive.google.com/thumbnail?id=${encodeURIComponent(release.coverId)}&sz=w1200` : "");
-  if (!source || failed) return <span className={`generated-cover ${compact ? "compact" : ""}`} role="img" aria-label={`Generated cover for ${release.title}`}><i>THE BOYZ</i><strong>{release.title}</strong><small>MUSIC ARCHIVE</small></span>;
-  return <img src={source} alt={`${release.title} cover`} loading="lazy" onError={() => setFailed(true)} />;
+  const [sourceIndex, setSourceIndex] = useState(0);
+  const linkedDriveId = driveImageId(release.coverUrl);
+  const sources = [release.coverId, linkedDriveId].filter((value, index, values): value is string => Boolean(value) && values.indexOf(value) === index).map((id) => `https://drive.google.com/thumbnail?id=${encodeURIComponent(id)}&sz=w1200`);
+  if (release.coverUrl && !linkedDriveId) sources.push(release.coverUrl);
+  useEffect(() => setSourceIndex(0), [release.coverId, release.coverUrl]);
+  const source = sources[sourceIndex] || "";
+  if (!source) return <span className={`generated-cover ${compact ? "compact" : ""}`} role="img" aria-label={`Generated cover for ${release.title}`}><i>THE BOYZ</i><strong>{release.title}</strong><small>MUSIC ARCHIVE</small></span>;
+  return <img src={source} alt={`${release.title} cover`} loading="lazy" onError={() => setSourceIndex((index) => index + 1)} />;
 }
 
 function route() {
@@ -135,19 +146,15 @@ function TrackList({ tracks, current, play }: { tracks: Track[]; current: Track 
   </article>)}</div>;
 }
 
-function Player({ track, queue, onEnded, previous }: { track: Track | null; queue: Track[]; onEnded: () => void; previous: () => void }) {
-  const audio = useRef<HTMLAudioElement>(null);
-  const [error, setError] = useState("");
-  useEffect(() => { setError(""); }, [track?.id]);
+function Player({ track, next, previous }: { track: Track | null; next: () => void; previous: () => void }) {
   if (!track) return null;
   return <aside className="player" aria-label="Music player">
     <div className="player-cover"><Cover release={{ title: track.releaseTitle, coverId: track.coverId, coverUrl: track.coverUrl }} compact /></div>
     <div className="player-title"><small>NOW PLAYING / {track.variant.toUpperCase()}</small><strong>{track.title}</strong><span>{track.releaseTitle}</span></div>
     <button onClick={previous} aria-label="Previous track">‹</button>
-    <audio key={track.id} ref={audio} controls autoPlay preload="metadata" src={streamUrl(track.id)} onEnded={onEnded} onError={() => setError("PLAYBACK ERROR — CHECK API KEY OR DRIVE SHARING")} />
-    <button onClick={onEnded} aria-label="Next track">›</button>
+    <iframe key={track.id} src={previewUrl(track.id)} title={`Player: ${track.title}`} allow="autoplay" />
+    <button onClick={next} aria-label="Next track">›</button>
     <a href={fileUrl(track.id)} target="_blank" rel="noreferrer">SOURCE ↗</a>
-    {error && <p>{error}</p>}
   </aside>;
 }
 
@@ -189,7 +196,7 @@ export function MusicArchive({ data }: { data: RawArchive }) {
       : view.page === "soundcloud" ? <SoundcloudIndex members={catalog.soundcloud} open={(id) => source(`soundcloud/${id}`)} />
       : <Home releases={catalog.releases} soundcloud={catalog.soundcloud} open={source} />}
     <Footer data={data} />
-    <Player track={current} queue={queue} onEnded={() => move(1)} previous={() => move(-1)} />
+    <Player track={current} next={() => move(1)} previous={() => move(-1)} />
   </main>;
 }
 

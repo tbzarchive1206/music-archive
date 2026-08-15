@@ -14,6 +14,7 @@ test("builds a self-contained Music archive for GitHub Pages", async () => {
   assert.match(script, /THE BOYZ SOUNDCLOUD/);
   assert.match(script, /INSTRUMENTAL/);
   assert.match(script, /NOW PLAYING/);
-  assert.match(script, /alt=media/);
+  assert.match(script, /\/preview/);
+  assert.doesNotMatch(script, /PLAYBACK ERROR/);
   assert.match(script, /Generated cover/);
 });

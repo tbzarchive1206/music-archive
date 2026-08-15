@@ -7,7 +7,7 @@ Samodzielne archiwum muzyczne THE BOYZ przeznaczone do publikacji jako GitHub Pa
 - 48 wydań automatycznie zbudowanych z folderów Google Drive,
 - albumy, single, OST, projekty oraz sekcja THE BOYZ SoundCloud,
 - osobne tracklisty `Original`, `Vocals` i `Instrumental`,
-- jeden stały odtwarzacz działający bez opuszczania strony,
+- jeden stały odtwarzacz Google Drive działający bez opuszczania strony,
 - wyszukiwanie po nazwie wydania, utworu, członku i dacie,
 - filtrowanie po roku, typie wydania i członku,
 - rzeczywiste okładki wskazywane w arkuszu lub dodane do folderu albumu,
@@ -51,7 +51,6 @@ pnpm test
 W `Settings → Secrets and variables → Actions` dodaj:
 
 - sekret `GOOGLE_DRIVE_API_KEY` – klucz serwerowy z włączonym Google Drive API, używany wyłącznie przez synchronizację GitHub Actions,
-- sekret `GOOGLE_DRIVE_PLAYER_API_KEY` – osobny klucz przeglądarkowy z włączonym Google Drive API i ograniczeniem HTTP referrer do adresu Twojej GitHub Page; zostanie użyty przez player,
 - sekret `GOOGLE_SHEETS_API_KEY` – klucz z włączonym Google Sheets API; może to być ten sam klucz, jeśli ma dostęp do obu API,
 - opcjonalną zmienną repozytorium `MUSIC_METADATA_SHEET_ID`, jeśli chcesz później podmienić przygotowany arkusz na inny. Dołączony arkusz jest już wpisany jako domyślny.
 
