@@ -201,7 +201,7 @@ export function MusicArchive({ data }: { data: RawArchive }) {
 }
 
 function Header({ releases, tracks, files, updated }: { releases: number; tracks: number; files: number; updated: string }) {
-  return <header className="masthead"><div className="utility"><a className="brand" href="https://tbzarchive1206.github.io/tbzarchive/">THE BOYZ / FAN ARCHIVE</a><nav><span>MUSIC ARCHIVE</span><span>/</span><a href="https://x.com/tbzarchive1206_" target="_blank" rel="noreferrer">TWITTER ↗</a></nav></div><a href="#/"><h1><span className="solid">MUSIC</span><span className="outline">ARCHIVE</span></h1></a><div className="stats"><p><strong>{releases}</strong> RELEASES</p><i /><p><strong>{tracks}</strong> AUDIO FILES</p><i /><p><strong>{files}</strong> TOTAL FILES</p><i /><p>UPDATED <strong>{new Date(updated).toLocaleDateString("en-GB")}</strong></p></div></header>;
+  return <header className="masthead"><div className="utility"><a className="brand" href="https://tbzarchive.com/">THE BOYZ / FAN ARCHIVE</a><nav><span>MUSIC ARCHIVE</span><span>/</span><a href="https://x.com/tbzarchive1206_" target="_blank" rel="noreferrer">TWITTER ↗</a></nav></div><a href="#/"><h1><span className="solid">MUSIC</span><span className="outline">ARCHIVE</span></h1></a><div className="stats"><p><strong>{releases}</strong> RELEASES</p><i /><p><strong>{tracks}</strong> AUDIO FILES</p><i /><p><strong>{files}</strong> TOTAL FILES</p><i /><p>UPDATED <strong>{new Date(updated).toLocaleDateString("en-GB")}</strong></p></div></header>;
 }
 
 function Home({ releases, soundcloud, open }: { releases: Release[]; soundcloud: SoundcloudMember[]; open: (hash: string) => void }) {
