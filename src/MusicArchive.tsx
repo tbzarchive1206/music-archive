@@ -146,14 +146,13 @@ function TrackList({ tracks, current, play }: { tracks: Track[]; current: Track 
   </article>)}</div>;
 }
 
-function Player({ track, next, previous }: { track: Track | null; next: () => void; previous: () => void }) {
+function Player({ track, next, previous, close }: { track: Track | null; next: () => void; previous: () => void; close: () => void }) {
   if (!track) return null;
-  return <aside className="player" aria-label="Music player">
+  return <aside className="player" aria-label="Music player"><button className="player-close" onClick={close} aria-label="Close music player">×</button>
     <div className="player-cover"><Cover release={{ title: track.releaseTitle, coverId: track.coverId, coverUrl: track.coverUrl }} compact /></div>
     <div className="player-title"><small>NOW PLAYING / {track.variant.toUpperCase()}</small><strong>{track.title}</strong><span>{track.releaseTitle}</span></div>
-    <button onClick={previous} aria-label="Previous track">‹</button>
     <iframe key={track.id} src={previewUrl(track.id)} title={`Player: ${track.title}`} allow="autoplay" />
-    <button onClick={next} aria-label="Next track">›</button>
+    <div className="player-track-controls"><button onClick={previous}>Previous</button><button onClick={next}>Next</button></div>
     <a href={fileUrl(track.id)} target="_blank" rel="noreferrer">SOURCE ↗</a>
   </aside>;
 }
@@ -196,7 +195,7 @@ export function MusicArchive({ data }: { data: RawArchive }) {
       : view.page === "soundcloud" ? <SoundcloudIndex members={catalog.soundcloud} open={(id) => source(`soundcloud/${id}`)} />
       : <Home releases={catalog.releases} soundcloud={catalog.soundcloud} open={source} />}
     <Footer data={data} />
-    <Player track={current} next={() => move(1)} previous={() => move(-1)} />
+    <Player track={current} next={() => move(1)} previous={() => move(-1)} close={() => { setCurrent(null); setQueue([]); }} />
   </main>;
 }
 
